@@ -120,7 +120,27 @@
 			  <version>4.12</version>
 			  <scope>test</scope>
 			</dependency>
+			<dependency>
+		      <groupId>ch.qos.logback</groupId>
+		      <artifactId>logback-classic</artifactId>
+		      <version>1.2.3</version>
+		    </dependency>
+			<dependency>
+			  <groupId>io.vertx</groupId>
+			  <artifactId>vertx-web-templ-freemarker</artifactId>
+			  <version>${vertx.version}</version>
+			</dependency>
+			<dependency>
+			  <groupId>com.github.rjeschke</groupId>
+			  <artifactId>txtmark</artifactId>
+			  <version>0.13</version>
+			</dependency>
 			
+			<dependency>
+			  <groupId>org.hsqldb</groupId>
+			  <artifactId>hsqldb</artifactId>
+			  <version>2.3.4</version>
+			</dependency>
     </dependencies>
 
 </project>
