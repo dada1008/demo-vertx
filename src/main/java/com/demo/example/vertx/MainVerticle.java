@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 import com.github.rjeschke.txtmark.Processor;
 
 import io.vertx.core.AbstractVerticle;
+import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Future;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.json.JsonArray;
@@ -36,15 +37,41 @@ public class MainVerticle extends AbstractVerticle {
 
 	@Override
 	public void start(Future<Void> startFuture) throws Exception {
+		//Default vertx http server
 		/*
 		 * vertx.createHttpServer().requestHandler(req -> { req.response()
 		 * .putHeader("content-type", "text/plain") .end("Hello Vert.x from Dada!");
 		 * }).listen(8080, result -> { if (result.succeeded()) { startFuture.complete();
 		 * } else { startFuture.fail(result.cause()); } });
 		 */
-		Future<Void> steps = prepareDatabase().compose(v -> startHttpServer());
+		
+		//Single class implementation
+		/*Future<Void> steps = prepareDatabase().compose(v -> startHttpServer());
 		steps.setHandler(startFuture.completer());
-		System.out.println("HTTP server started on port 8080");
+		System.out.println("HTTP server started on port 8080");*/
+		
+		//Http and DB separate verticle implementation
+		
+		Future<String> dbVerticleDeployment = Future.future();
+	    vertx.deployVerticle(new DatabaseVerticle(), dbVerticleDeployment.completer());
+
+	    dbVerticleDeployment.compose(id -> {
+
+	      Future<String> httpVerticleDeployment = Future.future();
+	      vertx.deployVerticle(
+	        "com.demo.example.vertx.HttpServerVerticle",
+	        new DeploymentOptions().setInstances(2),
+	        httpVerticleDeployment.completer());
+
+	      return httpVerticleDeployment;
+
+	    }).setHandler(ar -> {
+	      if (ar.succeeded()) {
+	        startFuture.complete();
+	      } else {
+	        startFuture.fail(ar.cause());
+	      }
+	    });
 	}
 
 	private Future<Void> prepareDatabase() {
