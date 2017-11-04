@@ -1,4 +1,4 @@
-package io.vertx.guides.wiki.http;
+package com.demo.example.vertx.http;
 
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;

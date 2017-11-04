@@ -39,5 +39,8 @@ public interface DatabaseService {
   
   @Fluent
   DatabaseService fetchAllPagesData(Handler<AsyncResult<List<JsonObject>>> resultHandler);
+  
+  @Fluent
+  DatabaseService fetchPageById(int id, Handler<AsyncResult<JsonObject>> resultHandler);
 
 }

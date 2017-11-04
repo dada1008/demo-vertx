@@ -1,4 +1,4 @@
-package io.vertx.guides.wiki.database;
+package com.demo.example.vertx.database;
 
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Vertx;
