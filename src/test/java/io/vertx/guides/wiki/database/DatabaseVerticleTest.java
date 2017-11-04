@@ -84,4 +84,30 @@ public class DatabaseVerticleTest {
     async.awaitSuccess(5000);
   }
 
+	@Test
+	public void test_fetchAllPagesData(TestContext context) {
+		Async async = context.async();
+
+		service.createPage("A", "abc", context.asyncAssertSuccess(p1 -> {
+			service.createPage("B", "123", context.asyncAssertSuccess(p2 -> {
+				service.fetchAllPagesData(context.asyncAssertSuccess(data -> {
+
+					context.assertEquals(2, data.size());
+
+					JsonObject a = data.get(0);
+					context.assertEquals("A", a.getString("NAME"));
+					context.assertEquals("abc", a.getString("CONTENT"));
+
+					JsonObject b = data.get(1);
+					context.assertEquals("B", b.getString("NAME"));
+					context.assertEquals("123", b.getString("CONTENT"));
+
+					async.complete();
+
+				}));
+			}));
+		}));
+		async.awaitSuccess(5000);
+	}
+
 }
