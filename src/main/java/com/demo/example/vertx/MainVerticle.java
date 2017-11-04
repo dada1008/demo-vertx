@@ -45,14 +45,14 @@ public class MainVerticle extends AbstractVerticle {
 		 * } else { startFuture.fail(result.cause()); } });
 		 */
 		
-		//Single class implementation
+		//Step-1 Single class implementation
 		/*Future<Void> steps = prepareDatabase().compose(v -> startHttpServer());
 		steps.setHandler(startFuture.completer());
 		System.out.println("HTTP server started on port 8080");*/
 		
-		//Http and DB separate verticle implementation
+		//Step-2 Http and DB separate verticle implementation
 		
-		Future<String> dbVerticleDeployment = Future.future();
+		/*Future<String> dbVerticleDeployment = Future.future();
 	    vertx.deployVerticle(new DatabaseVerticle(), dbVerticleDeployment.completer());
 
 	    dbVerticleDeployment.compose(id -> {
@@ -71,7 +71,30 @@ public class MainVerticle extends AbstractVerticle {
 	      } else {
 	        startFuture.fail(ar.cause());
 	      }
-	    });
+	    });*/
+		
+		//Step-3 Http and DB separate verticle, DB main code created as Service Proxy implementation
+		
+				Future<String> dbVerticleDeployment = Future.future();
+			    vertx.deployVerticle(new com.demo.example.vertx.database.DatabaseVerticle(), dbVerticleDeployment.completer());
+
+			    dbVerticleDeployment.compose(id -> {
+
+			      Future<String> httpVerticleDeployment = Future.future();
+			      vertx.deployVerticle(
+			        "com.demo.example.vertx.http.HttpServerVerticle",
+			        new DeploymentOptions().setInstances(2),
+			        httpVerticleDeployment.completer());
+
+			      return httpVerticleDeployment;
+
+			    }).setHandler(ar -> {
+			      if (ar.succeeded()) {
+			        startFuture.complete();
+			      } else {
+			        startFuture.fail(ar.cause());
+			      }
+			    });
 	}
 
 	private Future<Void> prepareDatabase() {
