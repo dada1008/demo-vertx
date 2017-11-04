@@ -10,6 +10,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.jdbc.JDBCClient;
 
 import java.util.HashMap;
+import java.util.List;
 
 @ProxyGen
 public interface DatabaseService {
@@ -35,4 +36,8 @@ public interface DatabaseService {
   static DatabaseService createProxy(Vertx vertx, String address) {
     return new DatabaseServiceVertxEBProxy(vertx, address);
   }
+  
+  @Fluent
+  DatabaseService fetchAllPagesData(Handler<AsyncResult<List<JsonObject>>> resultHandler);
+
 }
