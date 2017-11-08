@@ -1,3 +1,20 @@
+/*
+ *  Copyright (c) 2017 Red Hat, Inc. and/or its affiliates.
+ *  Copyright (c) 2017 INSA Lyon, CITI Laboratory.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.demo.example.vertx.http;
 
 import io.vertx.core.DeploymentOptions;
@@ -13,22 +30,21 @@ import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.WebClientOptions;
 import io.vertx.ext.web.codec.BodyCodec;
+import com.demo.example.vertx.database.DatabaseVerticle;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import com.demo.example.vertx.database.DatabaseVerticle;
-
+/**
+ * @author <a href="https://julien.ponge.org/">Julien Ponge</a>
+ */
 @RunWith(VertxUnitRunner.class)
 public class ApiTest {
 
   private Vertx vertx;
   private WebClient webClient;
-
-  // tag::tokenField[]
   private String jwtTokenHeaderValue;
-  // end::tokenField[]
 
   @Before
   public void prepare(TestContext context) {
@@ -42,13 +58,11 @@ public class ApiTest {
 
     vertx.deployVerticle(new HttpServerVerticle(), context.asyncAssertSuccess());
 
-    // tag::test-https[]
     webClient = WebClient.create(vertx, new WebClientOptions()
       .setDefaultHost("localhost")
       .setDefaultPort(8080)
-      .setSsl(true) // <1>
-      .setTrustOptions(new JksOptions().setPath("server-keystore.jks").setPassword("secret"))); // <2>
-    // end::test-https[]
+      .setSsl(true)
+      .setTrustOptions(new JksOptions().setPath("server-keystore.jks").setPassword("secret")));
   }
 
   @After
@@ -56,36 +70,32 @@ public class ApiTest {
     vertx.close(context.asyncAssertSuccess());
   }
 
-  // tag::fetch-token[]
   @Test
   public void play_with_api(TestContext context) {
     Async async = context.async();
 
     Future<String> tokenRequest = Future.future();
     webClient.get("/api/token")
-      .putHeader("login", "foo")  // <1>
+      .putHeader("login", "foo")
       .putHeader("password", "bar")
-      .as(BodyCodec.string()) // <2>
+      .as(BodyCodec.string())
       .send(ar -> {
         if (ar.succeeded()) {
-          tokenRequest.complete(ar.result().body());  // <3>
+          tokenRequest.complete(ar.result().body());
         } else {
           context.fail(ar.cause());
         }
       });
-      // (...)
-  // end::fetch-token[]
 
     JsonObject page = new JsonObject()
       .put("name", "Sample")
       .put("markdown", "# A page");
 
-    // tag::use-token[]
     Future<JsonObject> postRequest = Future.future();
     tokenRequest.compose(token -> {
-      jwtTokenHeaderValue = "Bearer " + token;  // <1>
+      jwtTokenHeaderValue = "Bearer " + token;
       webClient.post("/api/pages")
-        .putHeader("Authorization", jwtTokenHeaderValue)  // <2>
+        .putHeader("Authorization", jwtTokenHeaderValue)
         .as(BodyCodec.jsonObject())
         .sendJsonObject(page, ar -> {
           if (ar.succeeded()) {
@@ -111,8 +121,6 @@ public class ApiTest {
           }
         });
     }, getRequest);
-    // (...)
-    // end::use-token[]
 
     Future<JsonObject> putRequest = Future.future();
     getRequest.compose(response -> {

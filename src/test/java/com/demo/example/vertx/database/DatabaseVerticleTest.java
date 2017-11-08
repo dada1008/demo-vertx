@@ -12,13 +12,12 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import com.demo.example.vertx.database.DatabaseService;
-import com.demo.example.vertx.database.DatabaseVerticle;
 
 @RunWith(VertxUnitRunner.class)
 public class DatabaseVerticleTest {
 
   private Vertx vertx;
-  private DatabaseService service;
+  private com.demo.example.vertx.database.rxjava.DatabaseService service;
 
   @Before
   public void prepare(TestContext context) throws InterruptedException {
