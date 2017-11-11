@@ -15,8 +15,13 @@ public class MainVerticle extends AbstractVerticle {
 
 		dbVerticleDeployment.flatMap(id -> { // <1>
 
+			// This Http verticle is to show authentication and JWT token use.
+			/*Single<String> httpVerticleDeployment = vertx.rxDeployVerticle(
+					"com.demo.example.vertx.http.HttpServerVerticle", new DeploymentOptions().setInstances(2));*/
+			
+			// This Http verticle is to show single page AngularJS implementation without authentication and JWT token
 			Single<String> httpVerticleDeployment = vertx.rxDeployVerticle(
-					"com.demo.example.vertx.http.HttpServerVerticle", new DeploymentOptions().setInstances(2));
+					"com.demo.example.vertx.http.SinglePageHttpServerVerticle", new DeploymentOptions().setInstances(2));
 
 			return httpVerticleDeployment;
 		}).subscribe(id -> startFuture.complete(), startFuture::fail); // <2>
