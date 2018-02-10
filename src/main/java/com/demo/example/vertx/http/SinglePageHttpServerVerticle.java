@@ -7,20 +7,23 @@ import org.slf4j.LoggerFactory;
 
 import com.github.rjeschke.txtmark.Processor;
 
+import io.reactivex.Flowable;
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import io.vertx.ext.web.handler.sockjs.BridgeOptions;
+import io.vertx.ext.web.handler.sockjs.PermittedOptions;
+import io.vertx.reactivex.ext.web.handler.sockjs.SockJSHandler;
 // tag::rx-imports[]
-import io.vertx.rxjava.core.AbstractVerticle;
-import io.vertx.rxjava.core.http.HttpServer;
-import io.vertx.rxjava.ext.web.Router;
-import io.vertx.rxjava.ext.web.RoutingContext;
-import io.vertx.rxjava.ext.web.handler.BodyHandler;
-import io.vertx.rxjava.ext.web.handler.CookieHandler;
-import io.vertx.rxjava.ext.web.handler.SessionHandler;
-import io.vertx.rxjava.ext.web.handler.StaticHandler;
-import io.vertx.rxjava.ext.web.sstore.LocalSessionStore;
-import rx.Observable;
+import io.vertx.reactivex.core.AbstractVerticle;
+import io.vertx.reactivex.core.http.HttpServer;
+import io.vertx.reactivex.ext.web.Router;
+import io.vertx.reactivex.ext.web.RoutingContext;
+import io.vertx.reactivex.ext.web.handler.BodyHandler;
+import io.vertx.reactivex.ext.web.handler.CookieHandler;
+import io.vertx.reactivex.ext.web.handler.SessionHandler;
+import io.vertx.reactivex.ext.web.handler.StaticHandler;
+import io.vertx.reactivex.ext.web.sstore.LocalSessionStore;
 
 public class SinglePageHttpServerVerticle extends AbstractVerticle {
 
@@ -29,7 +32,7 @@ public class SinglePageHttpServerVerticle extends AbstractVerticle {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(SinglePageHttpServerVerticle.class);
 
-	private com.demo.example.vertx.database.rxjava.DatabaseService dbService;
+	private com.demo.example.vertx.database.reactivex.DatabaseService dbService;
 
 	// tag::rx-vertx-delegate[]
 	@Override
@@ -47,6 +50,15 @@ public class SinglePageHttpServerVerticle extends AbstractVerticle {
 		router.route().handler(BodyHandler.create());
 		router.route().handler(SessionHandler.create(LocalSessionStore.create(vertx)));
 
+		// tag::sockjs-handler-setup[]
+	    SockJSHandler sockJSHandler = SockJSHandler.create(vertx); // <1>
+	    BridgeOptions bridgeOptions = new BridgeOptions()
+	      .addInboundPermitted(new PermittedOptions().setAddress("app.markdown"))  // <2>
+	      .addOutboundPermitted(new PermittedOptions().setAddress("page.saved")); // <3>
+	    sockJSHandler.bridge(bridgeOptions); // <4>
+	    router.route("/eventbus/*").handler(sockJSHandler); // <5>
+	    // end::sockjs-handler-setup[]
+	    
 		// tag::static-assets[]
 		router.get("/app/*").handler(StaticHandler.create().setCachingEnabled(false)); // <1> <2>
 		router.get("/").handler(context -> context.reroute("/app/index.html"));
@@ -81,7 +93,7 @@ public class SinglePageHttpServerVerticle extends AbstractVerticle {
 
 	private void apiDeletePage(RoutingContext context) {
 		int id = Integer.valueOf(context.request().getParam("id"));
-		dbService.rxDeletePage(id).subscribe(v -> apiResponse(context, 200, null, null), t -> apiFailure(context, t));
+		dbService.rxDeletePage(id).subscribe(() -> apiResponse(context, 200, null, null), t -> apiFailure(context, t));
 	}
 
 	// tag::apiUpdatePage[]
@@ -91,7 +103,7 @@ public class SinglePageHttpServerVerticle extends AbstractVerticle {
 		if (!validateJsonPageDocument(context, page, "markdown")) {
 			return;
 		}
-		dbService.rxSavePage(id, page.getString("markdown")).subscribe(v -> apiResponse(context, 200, null, null),
+		dbService.rxSavePage(id, page.getString("markdown")).subscribe(() -> apiResponse(context, 200, null, null),
 				t -> apiFailure(context, t));
 	}
 	// end::apiUpdatePage[]
@@ -114,7 +126,7 @@ public class SinglePageHttpServerVerticle extends AbstractVerticle {
 			return;
 		}
 		dbService.rxCreatePage(page.getString("name"), page.getString("markdown"))
-				.subscribe(v -> apiResponse(context, 201, null, null), t -> apiFailure(context, t));
+				.subscribe(() -> apiResponse(context, 201, null, null), t -> apiFailure(context, t));
 	}
 
 	private void apiGetPage(RoutingContext context) {
@@ -132,7 +144,7 @@ public class SinglePageHttpServerVerticle extends AbstractVerticle {
 	}
 
 	private void apiRoot(RoutingContext context) {
-		dbService.rxFetchAllPagesData().flatMapObservable(Observable::from)
+		dbService.rxFetchAllPagesData().flatMapPublisher(Flowable::fromIterable)
 				.map(obj -> new JsonObject().put("id", obj.getInteger("ID")).put("name", obj.getString("NAME")))
 				.collect(JsonArray::new, JsonArray::add)
 				.subscribe(pages -> apiResponse(context, 200, "pages", pages), t -> apiFailure(context, t));

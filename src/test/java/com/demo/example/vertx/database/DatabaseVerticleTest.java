@@ -17,7 +17,7 @@ import com.demo.example.vertx.database.DatabaseService;
 public class DatabaseVerticleTest {
 
   private Vertx vertx;
-  private com.demo.example.vertx.database.rxjava.DatabaseService service;
+  private com.demo.example.vertx.database.reactivex.DatabaseService service;
 
   @Before
   public void prepare(TestContext context) throws InterruptedException {

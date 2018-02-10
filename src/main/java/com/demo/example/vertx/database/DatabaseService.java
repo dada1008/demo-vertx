@@ -25,8 +25,8 @@ public interface DatabaseService {
 	}
 
 	@GenIgnore
-	static com.demo.example.vertx.database.rxjava.DatabaseService createProxy(Vertx vertx, String address) {
-		return new com.demo.example.vertx.database.rxjava.DatabaseService(
+	static com.demo.example.vertx.database.reactivex.DatabaseService createProxy(Vertx vertx, String address) {
+		return new com.demo.example.vertx.database.reactivex.DatabaseService(
 				new DatabaseServiceVertxEBProxy(vertx, address));
 	}
 

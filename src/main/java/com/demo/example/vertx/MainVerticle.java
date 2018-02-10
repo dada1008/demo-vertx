@@ -1,9 +1,9 @@
 package com.demo.example.vertx;
 
+import io.reactivex.Single;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Future;
-import io.vertx.rxjava.core.AbstractVerticle;
-import rx.Single;
+import io.vertx.reactivex.core.AbstractVerticle;
 
 public class MainVerticle extends AbstractVerticle {
 
