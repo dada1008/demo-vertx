@@ -18,6 +18,17 @@
 // tag::module-decl[]
 'use strict';
 
+// Adapted from https://stackoverflow.com/a/8809472/2133695
+// Not a perfect GUID generator but good enough for the purpose of this demo
+function generateUUID() {
+	var d = new Date().getTime();
+	return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
+		 var r = (d + Math.random() * 16) % 16 | 0;
+		 d = Math.floor(d / 16);
+		 return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+	});
+}
+
 angular.module("wikiApp", [])
   .controller("WikiController", ["$scope", "$http", "$timeout", function ($scope, $http, $timeout) {
 
@@ -142,4 +153,22 @@ angular.module("wikiApp", [])
     });
     // end::live-rendering[]
 
+    // tag::event-bus-js-setup[]
+    var eb = new EventBus(window.location.protocol + "//" + window.location.host + "/eventbus");
+    // end::event-bus-js-setup[]
+    // tag::register-page-saved-handler[]
+    var clientUuid = generateUUID(); // <1>
+    eb.onopen = function () {
+      eb.registerHandler("page.saved", function (error, message) { // <2>
+        if (message.body // <3>
+          && $scope.pageId === message.body.id // <4>
+          && clientUuid !== message.body.client) { // <5>
+          $scope.$apply(function () { // <6>
+            $scope.pageModified = true; // <7>
+          });
+        }
+      });
+    };
+    // end::register-page-saved-handler[]
+    
   }]);

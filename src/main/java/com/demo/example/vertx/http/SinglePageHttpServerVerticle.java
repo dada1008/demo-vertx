@@ -59,6 +59,13 @@ public class SinglePageHttpServerVerticle extends AbstractVerticle {
 	    router.route("/eventbus/*").handler(sockJSHandler); // <5>
 	    // end::sockjs-handler-setup[]
 	    
+	    // tag::eventbus-markdown-consumer[]
+	    vertx.eventBus().<String>consumer("app.markdown", msg -> {
+	      String html = Processor.process(msg.body());
+	      msg.reply(html);
+	    });
+	    // end::eventbus-markdown-consumer[]
+	    
 		// tag::static-assets[]
 		router.get("/app/*").handler(StaticHandler.create().setCachingEnabled(false)); // <1> <2>
 		router.get("/").handler(context -> context.reroute("/app/index.html"));
@@ -103,7 +110,14 @@ public class SinglePageHttpServerVerticle extends AbstractVerticle {
 		if (!validateJsonPageDocument(context, page, "markdown")) {
 			return;
 		}
-		dbService.rxSavePage(id, page.getString("markdown")).subscribe(() -> apiResponse(context, 200, null, null),
+		dbService.rxSavePage(id, page.getString("markdown"))
+		.doOnComplete(() -> { // <1>
+	        JsonObject event = new JsonObject()
+	          .put("id", id) // <2>
+	          .put("client", page.getString("client")); // <3>
+	        vertx.eventBus().publish("page.saved", event); // <4>
+	      })
+		.subscribe(() -> apiResponse(context, 200, null, null),
 				t -> apiFailure(context, t));
 	}
 	// end::apiUpdatePage[]

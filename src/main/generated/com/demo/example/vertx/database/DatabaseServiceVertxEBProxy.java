@@ -34,12 +34,8 @@ import io.vertx.serviceproxy.ServiceException;
 import io.vertx.serviceproxy.ServiceExceptionMessageCodec;
 import io.vertx.core.json.JsonArray;
 import java.util.List;
-import io.vertx.ext.jdbc.JDBCClient;
 import com.demo.example.vertx.database.DatabaseService;
-import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
-import java.util.HashMap;
-import com.demo.example.vertx.database.SqlQuery;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 
@@ -96,6 +92,25 @@ public class DatabaseServiceVertxEBProxy implements DatabaseService {
     _json.put("name", name);
     DeliveryOptions _deliveryOptions = (_options != null) ? new DeliveryOptions(_options) : new DeliveryOptions();
     _deliveryOptions.addHeader("action", "fetchPage");
+    _vertx.eventBus().<JsonObject>send(_address, _json, _deliveryOptions, res -> {
+      if (res.failed()) {
+        resultHandler.handle(Future.failedFuture(res.cause()));
+      } else {
+        resultHandler.handle(Future.succeededFuture(res.result().body()));
+      }
+    });
+    return this;
+  }
+
+  public DatabaseService fetchPageById(int id, Handler<AsyncResult<JsonObject>> resultHandler) {
+    if (closed) {
+    resultHandler.handle(Future.failedFuture(new IllegalStateException("Proxy is closed")));
+      return this;
+    }
+    JsonObject _json = new JsonObject();
+    _json.put("id", id);
+    DeliveryOptions _deliveryOptions = (_options != null) ? new DeliveryOptions(_options) : new DeliveryOptions();
+    _deliveryOptions.addHeader("action", "fetchPageById");
     _vertx.eventBus().<JsonObject>send(_address, _json, _deliveryOptions, res -> {
       if (res.failed()) {
         resultHandler.handle(Future.failedFuture(res.cause()));
@@ -178,25 +193,6 @@ public class DatabaseServiceVertxEBProxy implements DatabaseService {
         resultHandler.handle(Future.failedFuture(res.cause()));
       } else {
         resultHandler.handle(Future.succeededFuture(convertList(res.result().body().getList())));
-      }
-    });
-    return this;
-  }
-
-  public DatabaseService fetchPageById(int id, Handler<AsyncResult<JsonObject>> resultHandler) {
-    if (closed) {
-    resultHandler.handle(Future.failedFuture(new IllegalStateException("Proxy is closed")));
-      return this;
-    }
-    JsonObject _json = new JsonObject();
-    _json.put("id", id);
-    DeliveryOptions _deliveryOptions = (_options != null) ? new DeliveryOptions(_options) : new DeliveryOptions();
-    _deliveryOptions.addHeader("action", "fetchPageById");
-    _vertx.eventBus().<JsonObject>send(_address, _json, _deliveryOptions, res -> {
-      if (res.failed()) {
-        resultHandler.handle(Future.failedFuture(res.cause()));
-      } else {
-        resultHandler.handle(Future.succeededFuture(res.result().body()));
       }
     });
     return this;
